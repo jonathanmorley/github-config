@@ -28,12 +28,6 @@ variable "excluded_repos" {
   default     = []
 }
 
-variable "github_token" {
-  description = "GitHub token for API authentication (used for repo discovery)"
-  type        = string
-  sensitive   = true
-}
-
 variable "repo_overrides" {
   description = "Per-repo setting overrides (repo name -> settings map)"
   type        = map(map(any))
