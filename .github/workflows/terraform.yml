@@ -46,9 +46,9 @@ jobs:
           script: |
             const plan = `${{ steps.plan.outputs.stdout }}`
             const body = `### Terraform Plan 📖
-\`\`\`
+```
 ${plan}
-\`\`\`
+```
 *Triggered by: @${{ github.actor }}*`
 
             github.rest.issues.createComment({

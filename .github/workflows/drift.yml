@@ -41,9 +41,9 @@ jobs:
 
 Terraform detected configuration drift in the following repos:
 
-\`\`\`
+```
 ${plan}
-\`\`\`
+```
 
 **Triggered by:** Scheduled drift detection`
 
