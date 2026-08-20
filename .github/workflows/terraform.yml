@@ -1,6 +1,11 @@
 name: Terraform
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '**.tf'
+      - '.github/workflows/terraform.yml'
   pull_request:
     branches: [main]
     paths:
@@ -59,7 +64,6 @@ jobs:
 
   apply:
     runs-on: ubuntu-latest
-    needs: plan
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout
