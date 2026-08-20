@@ -1,18 +1,27 @@
-data "http" "repos" {
-  url = "https://api.github.com/orgs/jonathanmorley/repos?per_page=100&type=all"
+data "github_repositories" "all" {
+  query = "org:jonathanmorley"
+}
 
-  request_headers = {
-    Accept        = "application/vnd.github+json"
-    Authorization = "Bearer ${var.github_token}"
-  }
+data "github_repository" "private" {
+  for_each = toset([
+    "cars",
+    "floorplans",
+    "nixpkgs-sanitized-preview",
+    "notes",
+  ])
+  full_name = "jonathanmorley/${each.value}"
 }
 
 locals {
-  all_repos = jsondecode(data.http.repos.response_body)
+  discovered_repos = concat(
+    data.github_repositories.all.names,
+    keys(data.github_repository.private),
+  )
+
   managed_repos = [
-    for repo in local.all_repos :
-    repo.name
-    if !contains(var.excluded_repos, repo.name)
+    for repo in distinct(compact(local.discovered_repos)) :
+    repo
+    if !contains(var.excluded_repos, repo)
   ]
 }
 
