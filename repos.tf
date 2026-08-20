@@ -1,5 +1,5 @@
 data "github_repositories" "all" {
-  query = "user:jonathanmorley"
+  query = "user:jonathanmorley org:jonathanmorley"
 }
 
 locals {
