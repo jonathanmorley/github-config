@@ -1,12 +1,18 @@
-data "github_repositories" "all" {
-  query = "user:jonathanmorley org:jonathanmorley"
+data "http" "repos" {
+  url = "https://api.github.com/orgs/jonathanmorley/repos?per_page=100&type=all"
+
+  request_headers = {
+    Accept        = "application/vnd.github+json"
+    Authorization = "Bearer ${var.github_token}"
+  }
 }
 
 locals {
+  all_repos = jsondecode(data.http.repos.response_body)
   managed_repos = [
-    for repo in data.github_repositories.all.names :
-    repo
-    if !contains(var.excluded_repos, repo)
+    for repo in local.all_repos :
+    repo.name
+    if !contains(var.excluded_repos, repo.name)
   ]
 }
 
