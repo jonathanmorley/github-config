@@ -27,11 +27,7 @@ terraform apply   # Apply changes
 
 ## Authentication
 
-This repo uses GitHub App authentication for short-lived installation tokens. Credentials are stored as GitHub Actions secrets:
-
-- `GITHUB_APP_ID` - GitHub App ID
-- `GITHUB_APP_INSTALLATION_ID` - Installation ID
-- `GITHUB_APP_PEM` - Private key (PEM format)
+This repo uses [Octo STS](https://github.com/apps/octo-sts) for short-lived GitHub credentials. No long-lived PATs are stored.
 
 State is stored in Terraform Cloud using the `TF_CLOUD_TOKEN` secret.
 

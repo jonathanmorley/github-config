@@ -18,9 +18,6 @@ permissions:
 
 env:
   TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
-  TF_VAR_github_app_id: ${{ secrets.GITHUB_APP_ID }}
-  TF_VAR_github_app_installation_id: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
-  TF_VAR_github_app_pem: ${{ secrets.GITHUB_APP_PEM }}
 
 jobs:
   plan:
