@@ -22,6 +22,8 @@ jobs:
           terraform_version: "1.10"
 
       - name: Terraform Init
+        env:
+          TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
         run: terraform init
 
       - name: Terraform Plan
@@ -33,30 +35,51 @@ jobs:
         run: terraform plan -no-color -detailed-exitcode
         continue-on-error: true
 
-      - name: Create Issue on Drift
+      - name: Create or Update Issue on Drift
         if: steps.plan.outcome == 'success' && steps.plan.exitcode == 2
         uses: actions/github-script@v7
         with:
           script: |
             const plan = `${{ steps.plan.outputs.stdout }}`
             const body = `## Infrastructure Drift Detected
-            
-            Terraform detected configuration drift in the following repos:
-            
-            \`\`\`
-            ${plan}
-            \`\`\`
-            
-            **Run:** [View in Terraform Cloud](https://app.terraform.io/app/jonathanmorley/workspaces/github-config/runs)
-            **Triggered by:** Scheduled drift detection`
-            
-            github.rest.issues.create({
+
+Terraform detected configuration drift in the following repos:
+
+\`\`\`
+${plan}
+\`\`\`
+
+**Triggered by:** Scheduled drift detection`
+
+            // Check for existing open drift issues
+            const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Drift detected: ${new Date().toISOString().split('T')[0]}`,
-              body: body,
-              labels: ['drift']
+              state: 'open',
+              labels: 'drift'
             })
+
+            if (existing.data.length > 0) {
+              // Update existing issue with latest drift info
+              const issue = existing.data[0]
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: body
+              })
+              console.log(`Updated existing drift issue #${issue.number}`)
+            } else {
+              // Create new drift issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Drift detected',
+                body: body,
+                labels: ['drift']
+              })
+              console.log('Created new drift issue')
+            }
 
       - name: No Drift
         if: steps.plan.outcome == 'success' && steps.plan.exitcode == 0

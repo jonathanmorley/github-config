@@ -1,7 +1,8 @@
 terraform {
   cloud {
-    hostname = "app.terraform.io"
+    hostname     = "app.terraform.io"
     organization = "jonathanmorley"
+
     workspaces {
       name = "github-config"
     }

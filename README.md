@@ -27,11 +27,13 @@ terraform apply   # Apply changes
 
 ## Authentication
 
-This repo uses GitHub App authentication for short-lived installation tokens. The app credentials are stored as Terraform Cloud workspace variables:
+This repo uses GitHub App authentication for short-lived installation tokens. Credentials are stored as GitHub Actions secrets:
 
-- `github_app_id` - GitHub App ID
-- `github_app_installation_id` - Installation ID
-- `github_app_pem` - Private key (sensitive)
+- `GITHUB_APP_ID` - GitHub App ID
+- `GITHUB_APP_INSTALLATION_ID` - Installation ID
+- `GITHUB_APP_PEM` - Private key (PEM format)
+
+State is stored in Terraform Cloud using the `TF_CLOUD_TOKEN` secret.
 
 ## Adding a New Repo
 
