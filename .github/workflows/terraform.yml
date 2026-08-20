@@ -1,0 +1,98 @@
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.tf'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.tf'
+      - '.github/workflows/terraform.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: terraform
+      cancel-in-progress: false
+    env:
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Federate GitHub Token
+        uses: octo-sts/action@main
+        id: octo-sts
+        with:
+          scope: jonathanmorley/github-config
+          identity: terraform
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Write Plan to Summary
+        if: always() && steps.plan.outcome != 'skipped'
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
+        run: |
+          echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$PLAN_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on Plan Error
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+  apply:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    concurrency:
+      group: terraform
+      cancel-in-progress: false
+    env:
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Federate GitHub Token
+        uses: octo-sts/action@main
+        id: octo-sts
+        with:
+          scope: jonathanmorley/github-config
+          identity: terraform
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        env:
+          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+        run: terraform apply -auto-approve

@@ -1,0 +1,95 @@
+name: Drift Detection
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  detect-drift:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: terraform
+      cancel-in-progress: false
+    env:
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Federate GitHub Token
+        uses: octo-sts/action@main
+        id: octo-sts
+        with:
+          scope: jonathanmorley/github-config
+          identity: terraform
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+        run: terraform plan -no-color -detailed-exitcode
+        continue-on-error: true
+
+      - name: Create or Update Issue on Drift
+        if: steps.plan.outcome == 'success' && steps.plan.exitcode == 2
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.octo-sts.outputs.token }}
+          script: |
+            const plan = `${{ steps.plan.outputs.stdout }}`
+            const body = [
+              '## Infrastructure Drift Detected',
+              '',
+              'Terraform detected configuration drift in the following repos:',
+              '',
+              '```',
+              plan,
+              '```',
+              '',
+              '**Triggered by:** Scheduled drift detection'
+            ].join('\n')
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'drift'
+            })
+
+            if (existing.data.length > 0) {
+              const issue = existing.data[0]
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: body
+              })
+              console.log(`Updated existing drift issue #${issue.number}`)
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Drift detected',
+                body: body,
+                labels: ['drift']
+              })
+              console.log('Created new drift issue')
+            }
+
+      - name: No Drift
+        if: steps.plan.outcome == 'success' && steps.plan.exitcode == 0
+        run: echo "No drift detected"

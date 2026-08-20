@@ -27,11 +27,9 @@ terraform apply   # Apply changes
 
 ## Authentication
 
-This repo uses GitHub App authentication for short-lived installation tokens. The app credentials are stored as Terraform Cloud workspace variables:
+This repo uses [Octo STS](https://github.com/chainguard-dev/octo-sts) for short-lived GitHub credentials. The trust policy is at `.github/chainguard/terraform.sts.yaml`.
 
-- `github_app_id` - GitHub App ID
-- `github_app_installation_id` - Installation ID
-- `github_app_pem` - Private key (sensitive)
+State is stored in Terraform Cloud. GHA authenticates via `TF_TOKEN_app_terraform_io`.
 
 ## Adding a New Repo
 

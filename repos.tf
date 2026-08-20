@@ -16,7 +16,7 @@ resource "github_repository" "managed" {
   name = each.value
 
   # Auto-merge settings
-  allow_auto_merge     = var.default_settings.allow_auto_merge
+  allow_auto_merge       = var.default_settings.allow_auto_merge
   delete_branch_on_merge = var.default_settings.delete_branch_on_merge
 
   # Feature flags
