@@ -38,28 +38,15 @@ jobs:
         run: terraform plan -no-color -out=tfplan
         continue-on-error: true
 
-      - name: Comment Plan on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const plan = `${{ steps.plan.outputs.stdout }}`
-            const body = [
-              '### Terraform Plan',
-              '',
-              '```',
-              plan,
-              '```',
-              '',
-              `*Triggered by: @${{ github.actor }}*`
-            ].join('\n')
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            })
+      - name: Write Plan to Summary
+        if: always() && steps.plan.outcome != 'skipped'
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
+        run: |
+          echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$PLAN_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail on Plan Error
         if: steps.plan.outcome == 'failure'
