@@ -37,17 +37,18 @@ jobs:
         with:
           script: |
             const plan = `${{ steps.plan.outputs.stdout }}`
-            const body = `## Infrastructure Drift Detected
+            const body = [
+              '## Infrastructure Drift Detected',
+              '',
+              'Terraform detected configuration drift in the following repos:',
+              '',
+              '```',
+              plan,
+              '```',
+              '',
+              '**Triggered by:** Scheduled drift detection'
+            ].join('\n')
 
-Terraform detected configuration drift in the following repos:
-
-```
-${plan}
-```
-
-**Triggered by:** Scheduled drift detection`
-
-            // Check for existing open drift issues
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -56,7 +57,6 @@ ${plan}
             })
 
             if (existing.data.length > 0) {
-              // Update existing issue with latest drift info
               const issue = existing.data[0]
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -66,7 +66,6 @@ ${plan}
               })
               console.log(`Updated existing drift issue #${issue.number}`)
             } else {
-              // Create new drift issue
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
