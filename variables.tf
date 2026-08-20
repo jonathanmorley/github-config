@@ -33,3 +33,19 @@ variable "repo_overrides" {
   type        = map(map(any))
   default     = {}
 }
+
+variable "github_app_id" {
+  description = "GitHub App ID"
+  type        = string
+}
+
+variable "github_app_installation_id" {
+  description = "GitHub App Installation ID"
+  type        = string
+}
+
+variable "github_app_pem" {
+  description = "GitHub App private key (PEM format)"
+  type        = string
+  sensitive   = true
+}
