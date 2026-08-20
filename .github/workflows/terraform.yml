@@ -48,6 +48,7 @@ jobs:
         id: plan
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: terraform plan -no-color -out=tfplan
         continue-on-error: true
 
@@ -95,4 +96,5 @@ jobs:
       - name: Terraform Apply
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: terraform apply -auto-approve
