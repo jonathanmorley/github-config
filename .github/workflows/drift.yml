@@ -1,0 +1,59 @@
+name: Drift Detection
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  detect-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -detailed-exitcode
+        continue-on-error: true
+
+      - name: Create Issue on Drift
+        if: steps.plan.outcome == 'success' && steps.plan.exitcode == 2
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const plan = `${{ steps.plan.outputs.stdout }}`
+            const body = `## Infrastructure Drift Detected
+            
+            Terraform detected configuration drift in the following repos:
+            
+            \`\`\`
+            ${plan}
+            \`\`\`
+            
+            **Run:** [View in Terraform Cloud](https://app.terraform.io/app/jonathanmorley/workspaces/github-config/runs)
+            **Triggered by:** Scheduled drift detection`
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Drift detected: ${new Date().toISOString().split('T')[0]}`,
+              body: body,
+              labels: ['drift']
+            })
+
+      - name: No Drift
+        if: steps.plan.outcome == 'success' && steps.plan.exitcode == 0
+        run: echo "No drift detected"
