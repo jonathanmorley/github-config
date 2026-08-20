@@ -27,7 +27,11 @@ terraform apply   # Apply changes
 
 ## Authentication
 
-This repo uses [Octo STS](https://github.com/apps/octo-sts) for short-lived GitHub credentials. No long-lived PATs are stored.
+This repo uses GitHub App authentication for short-lived installation tokens. The app credentials are stored as Terraform Cloud workspace variables:
+
+- `github_app_id` - GitHub App ID
+- `github_app_installation_id` - Installation ID
+- `github_app_pem` - Private key (sensitive)
 
 ## Adding a New Repo
 
