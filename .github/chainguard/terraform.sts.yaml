@@ -1,5 +1,6 @@
 issuer: https://token.actions.githubusercontent.com
-subject: repo:jonathanmorley/github-config:ref:refs/heads/main
+subject_pattern: "repo:jonathanmorley/github-config:ref:.*"
 
 permissions:
-  repo: write
+  contents: write
+  issues: write
