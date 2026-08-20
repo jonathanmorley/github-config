@@ -4,3 +4,4 @@ subject_pattern: "repo:jonathanmorley@\\d+/github-config@\\d+:(ref|pull_request|
 permissions:
   contents: write
   issues: write
+  metadata: read
