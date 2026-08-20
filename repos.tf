@@ -29,8 +29,11 @@ resource "github_repository" "managed" {
   allow_squash_merge = var.default_settings.allow_squash_merge
   allow_rebase_merge = var.default_settings.allow_rebase_merge
 
-  # Prevent Terraform from deleting repos
+  # Prevent Terraform from deleting repos and ignore fields we don't manage
   lifecycle {
     prevent_destroy = true
+    ignore_changes = [
+      description,
+    ]
   }
 }
