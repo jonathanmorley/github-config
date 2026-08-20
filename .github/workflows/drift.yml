@@ -23,7 +23,7 @@ jobs:
 
       - name: Terraform Init
         env:
-          TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
         run: terraform init
 
       - name: Terraform Plan
