@@ -51,13 +51,19 @@ jobs:
       - name: Write Plan to Summary
         if: always() && steps.plan.outcome != 'skipped'
         run: |
-          CHANGES=$(tofu show -no-color tfplan 2>/dev/null | awk '/^Plan:|^No changes/ { print; next } /^  # .* will be created/ { skip=1; next } /^  # .* will be updated|^  # .* will be destroyed|^  # .* will be replaced/ { skip=0 } skip==0 { print }' || true)
+          CHANGES=$(tofu show -no-color -json tfplan 2>/dev/null | jq -r '
+            .resource_changes // [] |
+            map(select(.change.actions != ["create"])) |
+            if length == 0 then ""
+            else map(.address + " (" + (.change.actions | join(", ")) + ")") | join("\n")
+            end
+          ' || true)
           if [ -z "$CHANGES" ]; then
             echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
             echo 'No changes.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
-            echo '```hcl' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
             echo "$CHANGES" >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
