@@ -11,6 +11,13 @@ on:
     paths:
       - '**.tf'
       - '.github/workflows/terraform.yml'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply changes after plan'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -21,7 +28,7 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     concurrency:
-      group: terraform
+      group: terraform-plan
       cancel-in-progress: false
     env:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
@@ -68,9 +75,11 @@ jobs:
 
   apply:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: >-
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && inputs.apply)
     concurrency:
-      group: terraform
+      group: terraform-apply
       cancel-in-progress: false
     env:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
