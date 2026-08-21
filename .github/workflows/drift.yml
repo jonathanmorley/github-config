@@ -39,30 +39,9 @@ jobs:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
-          tofu plan -no-color -detailed-exitcode -out=tfplan > /dev/null 2>&1 && RC=0 || RC=$?
-          CHANGES=$(tofu show -no-color -json tfplan 2>/dev/null | jq -r '
-            .resource_changes // [] |
-            map(select(.change.actions != ["create"] and .change.actions != ["no-op"])) |
-            if length == 0 then ""
-            else map(
-              .address + " (" + (.change.actions | join(", ")) + ")\n" +
-              (
-                [.change.after | to_entries[] |
-                 select(.key as $k | .value != (.before // {} | .[$k])) |
-                 "  " + .key + ": " + (.before // "null" | tostring) + " -> " + (.value | tostring)]
-                | join("\n")
-              )
-            ) | join("\n\n")
-            end
-          ' || true)
-          echo "$CHANGES" > changes.txt
-          # Override exit code: no-op/create-only plans are not drift
-          if [ -n "$CHANGES" ]; then
-            echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
-          else
-            echo "exitcode=0" >> "$GITHUB_OUTPUT"
-          fi
-          cat changes.txt
+          tofu plan -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1 && RC=0 || RC=$?
+          echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
+          cat plan.txt
 
       - name: Create or Update Issue on Drift
         if: steps.plan.outputs.exitcode == '2'
