@@ -33,6 +33,7 @@ jobs:
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: "1.10"
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
@@ -43,12 +44,14 @@ jobs:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
-          set +e
-          terraform plan -no-color -detailed-exitcode > plan.txt 2>&1
-          EXIT_CODE=$?
-          echo "exitcode=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          terraform plan -no-color -detailed-exitcode > plan.txt 2>&1 && RC=0 || RC=$?
+          echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
+          {
+            echo "plan<<PLANEOF"
+            cat plan.txt
+            echo "PLANEOF"
+          } >> "$GITHUB_OUTPUT"
           cat plan.txt
-          exit 0
 
       - name: Create or Update Issue on Drift
         if: steps.plan.outputs.exitcode == '2'
@@ -56,7 +59,7 @@ jobs:
         with:
           github-token: ${{ steps.octo-sts.outputs.token }}
           script: |
-            const plan = `${{ steps.plan.outputs.stdout }}`
+            const plan = `${{ steps.plan.outputs.plan }}`
             const body = [
               '## Infrastructure Drift Detected',
               '',
