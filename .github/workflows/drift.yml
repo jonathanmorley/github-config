@@ -41,7 +41,7 @@ jobs:
         run: |
           tofu plan -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1 && RC=0 || RC=$?
           echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
-          grep -E '^  (-|~|\+|<=|#)' plan.txt > changes.txt || true
+          grep -E '^  (-|~|\+|<=|#)' plan.txt | grep -v 'will be imported\|imported from' > changes.txt || true
           cat changes.txt
 
       - name: Create or Update Issue on Drift
