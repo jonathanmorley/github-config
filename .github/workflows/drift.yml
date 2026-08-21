@@ -41,7 +41,7 @@ jobs:
         run: |
           tofu plan -no-color -detailed-exitcode -out=tfplan > /dev/null 2>&1 && RC=0 || RC=$?
           echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
-          CHANGES=$(tofu show -no-color tfplan 2>/dev/null || true)
+          CHANGES=$(tofu show -no-color tfplan 2>/dev/null | awk '/^Plan:|^No changes/ { print; next } /^  # .* will be created/ { skip=1; next } /^  # .* will be updated|^  # .* will be destroyed|^  # .* will be replaced/ { skip=0 } skip==0 { print }' || true)
           {
             echo "plan<<PLANEOF"
             echo "$CHANGES"
