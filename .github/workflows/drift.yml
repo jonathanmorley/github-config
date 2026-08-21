@@ -50,12 +50,12 @@ jobs:
           github-token: ${{ steps.octo-sts.outputs.token }}
           script: |
             const { execSync } = require('child_process');
-            const changes = execSync('cat changes.txt', { encoding: 'utf-8' });
+            const plan = execSync('cat plan.txt', { encoding: 'utf-8' });
             const body = [
               '## Infrastructure Drift Detected',
               '',
               '```',
-              changes,
+              plan,
               '```',
               '',
               '**Triggered by:** Scheduled drift detection'
