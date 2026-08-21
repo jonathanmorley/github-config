@@ -39,14 +39,15 @@ jobs:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
-          tofu plan -no-color -detailed-exitcode > plan.txt 2>&1 && RC=0 || RC=$?
+          tofu plan -no-color -detailed-exitcode -out=tfplan > /dev/null 2>&1 && RC=0 || RC=$?
           echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
+          CHANGES=$(tofu show -no-color tfplan 2>/dev/null || true)
           {
             echo "plan<<PLANEOF"
-            cat plan.txt
+            echo "$CHANGES"
             echo "PLANEOF"
           } >> "$GITHUB_OUTPUT"
-          cat plan.txt
+          if [ -n "$CHANGES" ]; then echo "$CHANGES"; else echo "No changes."; fi
 
       - name: Create or Update Issue on Drift
         if: steps.plan.outputs.exitcode == '2'

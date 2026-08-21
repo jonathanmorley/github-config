@@ -50,13 +50,17 @@ jobs:
 
       - name: Write Plan to Summary
         if: always() && steps.plan.outcome != 'skipped'
-        env:
-          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
         run: |
-          echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "$PLAN_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          CHANGES=$(tofu show -no-color tfplan 2>/dev/null || true)
+          if [ -z "$CHANGES" ]; then
+            echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No changes.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
+            echo '```hcl' >> "$GITHUB_STEP_SUMMARY"
+            echo "$CHANGES" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Fail on Plan Error
         if: steps.plan.outcome == 'failure'
