@@ -51,20 +51,20 @@ jobs:
       - name: Write Plan to Summary
         if: always() && steps.plan.outcome != 'skipped'
         run: |
-          CHANGES=$(tofu show -no-color -json tfplan 2>/dev/null | jq -r '
-            .resource_changes // [] |
-            map(select(.change.actions != ["create"] and .change.actions != ["no-op"])) |
-            if length == 0 then ""
-            else map(.address + " (" + (.change.actions | join(", ")) + ")") | join("\n")
-            end
-          ' || true)
-          if [ -z "$CHANGES" ]; then
+          tofu show -no-color tfplan 2>/dev/null | sed -n '/^OpenTofu will perform/,$ p' > plan.txt || true
+          sed -i '/^  # .* will be created,$/N;/^  # .* will be created,$/d' plan.txt || true
+          sed -i '/^OpenTofu will perform the following actions:$/d' plan.txt || true
+          sed -i '/^Plan: [0-9]/d' plan.txt || true
+          sed -i '/^$/d' plan.txt || true
+          sed -i '/^Changes to Outputs:/d' plan.txt || true
+          awk '/^  # .* imported$/{skip=1; next} /^  # .*\/{skip=0} !skip' plan.txt > plan_filtered.txt || true
+          if [ ! -s plan_filtered.txt ]; then
             echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
             echo 'No changes.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
-            echo "$CHANGES" >> "$GITHUB_STEP_SUMMARY"
+            cat plan_filtered.txt >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
