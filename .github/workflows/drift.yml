@@ -39,8 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
-          tofu plan -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1 && RC=0 || RC=$?
-          echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
+          tofu plan -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1 || true
           sed -n '/^OpenTofu will perform the following actions:/,/^Plan:/p' plan.txt | awk '
             /^  # .* will be imported/ { skip=1; next }
             /^  # / { skip=0 }
