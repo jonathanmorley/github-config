@@ -53,9 +53,6 @@ resource "github_repository" "public" {
   allow_squash_merge = var.public_default_settings.allow_squash_merge
   allow_rebase_merge = var.public_default_settings.allow_rebase_merge
 
-  # Vulnerability alerts
-  ignore_vulnerability_alerts_during_read = var.public_default_settings.ignore_vulnerability_alerts_during_read
-
   # Prevent Terraform from deleting repos and ignore fields we don't manage
   lifecycle {
     prevent_destroy = true
@@ -83,9 +80,6 @@ resource "github_repository" "private" {
   allow_merge_commit = var.private_default_settings.allow_merge_commit
   allow_squash_merge = var.private_default_settings.allow_squash_merge
   allow_rebase_merge = var.private_default_settings.allow_rebase_merge
-
-  # Vulnerability alerts
-  ignore_vulnerability_alerts_during_read = var.private_default_settings.ignore_vulnerability_alerts_during_read
 
   # Prevent Terraform from deleting repos and ignore fields we don't manage
   lifecycle {
