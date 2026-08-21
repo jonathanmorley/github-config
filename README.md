@@ -1,6 +1,6 @@
 # GitHub Config
 
-Terraform-managed configuration for all `jonathanmorley/*` repositories.
+OpenTofu-managed configuration for all `jonathanmorley/*` repositories.
 
 ## What It Manages
 
@@ -13,9 +13,9 @@ Terraform-managed configuration for all `jonathanmorley/*` repositories.
 ### Local Development
 
 ```bash
-terraform init
-terraform plan    # Preview changes
-terraform apply   # Apply changes
+tofu init
+tofu plan    # Preview changes
+tofu apply   # Apply changes
 ```
 
 ### How It Works

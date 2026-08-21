@@ -29,22 +29,22 @@ jobs:
           scope: jonathanmorley
           identity: terraform
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v2
         with:
-          terraform_version: "1.10"
-          terraform_wrapper: false
+          tofu_version: "1.10"
+          tofu_wrapper: false
 
-      - name: Terraform Init
-        run: terraform init
+      - name: OpenTofu Init
+        run: tofu init
 
-      - name: Terraform Plan
+      - name: OpenTofu Plan
         id: plan
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
-          terraform plan -no-color -detailed-exitcode > plan.txt 2>&1 && RC=0 || RC=$?
+          tofu plan -no-color -detailed-exitcode > plan.txt 2>&1 && RC=0 || RC=$?
           echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
           {
             echo "plan<<PLANEOF"

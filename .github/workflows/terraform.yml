@@ -37,20 +37,20 @@ jobs:
           scope: jonathanmorley
           identity: terraform
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v2
         with:
-          terraform_version: "1.10"
+          tofu_version: "1.10"
 
-      - name: Terraform Init
-        run: terraform init
+      - name: OpenTofu Init
+        run: tofu init
 
-      - name: Terraform Plan
+      - name: OpenTofu Plan
         id: plan
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
-        run: terraform plan -no-color -out=tfplan
+        run: tofu plan -no-color -out=tfplan
         continue-on-error: true
 
       - name: Write Plan to Summary
@@ -67,9 +67,18 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
+      - name: Upload Plan
+        if: steps.plan.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+          retention-days: 1
+
   apply:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    needs: plan
     environment: terraform-apply
     concurrency:
       group: terraform
@@ -87,16 +96,22 @@ jobs:
           scope: jonathanmorley
           identity: terraform
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v2
         with:
-          terraform_version: "1.10"
+          tofu_version: "1.10"
+          tofu_wrapper: false
 
-      - name: Terraform Init
-        run: terraform init
+      - name: OpenTofu Init
+        run: tofu init
 
-      - name: Terraform Apply
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+
+      - name: OpenTofu Apply
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
-        run: terraform apply -auto-approve
+        run: tofu apply -auto-approve tfplan
