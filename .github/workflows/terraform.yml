@@ -45,7 +45,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
-        run: tofu plan -no-color -out=tfplan
+        run: tofu plan -no-color -state=tfstate -out=tfplan
         continue-on-error: true
 
       - name: OpenTofu Plan
@@ -54,7 +54,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
-        run: tofu plan -no-color -detailed-exitcode
+        run: tofu plan -no-color -state=tfstate -detailed-exitcode
         continue-on-error: true
 
       - name: Write Plan to Summary
