@@ -10,6 +10,12 @@ locals {
   ]
 }
 
+import {
+  for_each = toset(local.managed_repos)
+  id       = each.value
+  to       = github_repository.managed[each.value]
+}
+
 resource "github_repository" "managed" {
   for_each = toset(local.managed_repos)
 
