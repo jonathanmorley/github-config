@@ -39,9 +39,32 @@ jobs:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
-          tofu plan -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1 && RC=0 || RC=$?
+          tofu plan -no-color -detailed-exitcode -out=tfplan > /dev/null 2>&1 && RC=0 || RC=$?
           echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
-          grep -E '^  (-|~|\+|<=|#)' plan.txt | grep -vE 'will be imported|imported from' > changes.txt || true
+          tofu show -no-color -json tfplan | jq -r '
+            .resource_changes // [] |
+            map(select(.change.actions != ["create"] and .change.actions != ["no-op"])) |
+            map(
+              .address as $addr |
+              .change.before as $before |
+              .change.after as $after |
+              ($before // {} | to_entries | map(.key)) as $before_keys |
+              ($after // {} | to_entries | map(.key)) as $all_keys |
+              (($all_keys + $before_keys) | unique) as $keys |
+              ($keys | map(select(
+                ($before // {} | .[.] | tostring) != ($after // {} | .[.] | tostring)
+              ))) as $diffs |
+              if ($diffs | length) == 0 then empty
+              else
+                "### " + $addr + "\n\n" +
+                ($diffs | map(
+                  "  " + . + ":\n" +
+                  "    - " + ($before // {} | .[.] // "null" | tostring) + "\n" +
+                  "    + " + ($after // {} | .[.] // "null" | tostring)
+                ) | join("\n\n"))
+              end
+            ) | join("\n\n")
+          ' > changes.txt || true
           cat changes.txt
 
       - name: Create or Update Issue on Drift
@@ -59,7 +82,7 @@ jobs:
               changes,
               '```',
               '',
-              '**Triggered by:** Scheduled drift detection'
+              '**Last checked:** ' + new Date().toISOString()
             ].join('\n')
 
             const existing = await github.rest.issues.listForRepo({
@@ -71,7 +94,7 @@ jobs:
 
             if (existing.data.length > 0) {
               const issue = existing.data[0]
-              await github.rest.issues.createComment({
+              await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
