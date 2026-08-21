@@ -12,7 +12,7 @@ variable "public_default_settings" {
   })
   default = {
     allow_auto_merge       = true
-    delete_branch_on_merge = false
+    delete_branch_on_merge = true
     has_issues             = true
     has_projects           = true
     has_wiki               = false
@@ -36,7 +36,7 @@ variable "private_default_settings" {
   })
   default = {
     allow_auto_merge       = false
-    delete_branch_on_merge = false
+    delete_branch_on_merge = true
     has_issues             = true
     has_projects           = true
     has_wiki               = false
