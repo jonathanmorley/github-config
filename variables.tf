@@ -9,6 +9,7 @@ variable "public_default_settings" {
     allow_merge_commit     = bool
     allow_squash_merge     = bool
     allow_rebase_merge     = bool
+    ignore_vulnerability_alerts_during_read = bool
   })
   default = {
     allow_auto_merge       = true
@@ -19,6 +20,7 @@ variable "public_default_settings" {
     allow_merge_commit     = true
     allow_squash_merge     = true
     allow_rebase_merge     = true
+    ignore_vulnerability_alerts_during_read = false
   }
 }
 
@@ -33,6 +35,7 @@ variable "private_default_settings" {
     allow_merge_commit     = bool
     allow_squash_merge     = bool
     allow_rebase_merge     = bool
+    ignore_vulnerability_alerts_during_read = bool
   })
   default = {
     allow_auto_merge       = false
@@ -43,6 +46,7 @@ variable "private_default_settings" {
     allow_merge_commit     = true
     allow_squash_merge     = true
     allow_rebase_merge     = true
+    ignore_vulnerability_alerts_during_read = false
   }
 }
 
