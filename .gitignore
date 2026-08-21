@@ -26,3 +26,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 plan.txt
+
+# Git worktrees
+.worktrees/
