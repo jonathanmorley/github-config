@@ -53,7 +53,7 @@ jobs:
         run: |
           CHANGES=$(tofu show -no-color -json tfplan 2>/dev/null | jq -r '
             .resource_changes // [] |
-            map(select(.change.actions != ["create"])) |
+            map(select(.change.actions != ["create"] and .change.actions != ["no-op"])) |
             if length == 0 then ""
             else map(.address + " (" + (.change.actions | join(", ")) + ")") | join("\n")
             end
