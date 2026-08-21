@@ -33,22 +33,23 @@ jobs:
       - name: OpenTofu Init
         run: tofu init
 
-      - name: OpenTofu Import
-        id: import
-        env:
-          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
-          TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
-        run: tofu plan -no-color -state=tfstate -out=tfplan > /dev/null 2>&1 || true
-
       - name: OpenTofu Plan
         id: plan
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
-          tofu plan -no-color -state=tfstate -detailed-exitcode > plan.txt 2>&1 && RC=0 || RC=$?
+          tofu plan -no-color -detailed-exitcode -out=tfplan > /dev/null 2>&1 && RC=0 || RC=$?
           echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
-          cat plan.txt
+          CHANGES=$(tofu show -no-color -json tfplan 2>/dev/null | jq -r '
+            .resource_changes // [] |
+            map(select(.change.actions != ["create"])) |
+            if length == 0 then ""
+            else map(.address + " (" + (.change.actions | join(", ")) + ")") | join("\n")
+            end
+          ' || true)
+          echo "$CHANGES" > changes.txt
+          cat changes.txt
 
       - name: Create or Update Issue on Drift
         if: steps.plan.outputs.exitcode == '2'
@@ -57,12 +58,12 @@ jobs:
           github-token: ${{ steps.octo-sts.outputs.token }}
           script: |
             const { execSync } = require('child_process');
-            const plan = execSync('cat plan.txt', { encoding: 'utf-8' });
+            const changes = execSync('cat changes.txt', { encoding: 'utf-8' });
             const body = [
               '## Infrastructure Drift Detected',
               '',
               '```',
-              plan,
+              changes,
               '```',
               '',
               '**Triggered by:** Scheduled drift detection'
