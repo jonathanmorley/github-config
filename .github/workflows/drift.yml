@@ -46,7 +46,7 @@ jobs:
             /^  # / { skip=0 }
             !skip { print }
           ' > changes.txt || true
-          if [ -s changes.txt ]; then
+          if [ -s changes.txt ] && [ "$(sed -e '/^[[:space:]]*$/d' changes.txt | wc -c)" -gt 0 ]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
