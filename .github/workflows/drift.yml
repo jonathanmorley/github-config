@@ -42,11 +42,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
-        run: terraform plan -no-color -detailed-exitcode
-        continue-on-error: true
+        run: |
+          set +e
+          terraform plan -no-color -detailed-exitcode > plan.txt 2>&1
+          EXIT_CODE=$?
+          echo "exitcode=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          cat plan.txt
+          exit 0
 
       - name: Create or Update Issue on Drift
-        if: steps.plan.outcome == 'success' && steps.plan.exitcode == 2
+        if: steps.plan.outputs.exitcode == '2'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           github-token: ${{ steps.octo-sts.outputs.token }}
@@ -92,5 +97,5 @@ jobs:
             }
 
       - name: No Drift
-        if: steps.plan.outcome == 'success' && steps.plan.exitcode == 0
+        if: steps.plan.outputs.exitcode == '0'
         run: echo "No drift detected"
