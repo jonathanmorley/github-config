@@ -89,7 +89,3 @@ resource "github_repository" "private" {
     ]
   }
 }
-
-output "managed_repos" {
-  value = local.managed_repos
-}
