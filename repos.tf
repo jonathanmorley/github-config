@@ -2,24 +2,9 @@ data "github_repositories" "all" {
   query = "org:jonathanmorley"
 }
 
-data "github_repository" "private" {
-  for_each = toset([
-    "cars",
-    "floorplans",
-    "nixpkgs-sanitized-preview",
-    "notes",
-  ])
-  full_name = "jonathanmorley/${each.value}"
-}
-
 locals {
-  discovered_repos = concat(
-    data.github_repositories.all.names,
-    keys(data.github_repository.private),
-  )
-
   managed_repos = [
-    for repo in distinct(compact(local.discovered_repos)) :
+    for repo in distinct(compact(data.github_repositories.all.names)) :
     repo
     if !contains(var.excluded_repos, repo)
   ]
