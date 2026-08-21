@@ -1,9 +1,9 @@
 data "github_repositories" "public" {
-  query = "org:jonathanmorley is:public"
+  query = "user:jonathanmorley is:public"
 }
 
 data "github_repositories" "private" {
-  query = "org:jonathanmorley is:private"
+  query = "user:jonathanmorley is:private"
 }
 
 locals {
