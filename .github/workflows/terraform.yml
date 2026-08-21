@@ -33,7 +33,7 @@ jobs:
         uses: octo-sts/action@main
         id: octo-sts
         with:
-          scope: jonathanmorley/github-config
+          scope: jonathanmorley
           identity: terraform
 
       - name: Setup Terraform
@@ -82,7 +82,7 @@ jobs:
         uses: octo-sts/action@main
         id: octo-sts
         with:
-          scope: jonathanmorley/github-config
+          scope: jonathanmorley
           identity: terraform
 
       - name: Setup Terraform
