@@ -41,7 +41,7 @@ jobs:
         run: |
           tofu plan -no-color -detailed-exitcode -out=tfplan > plan.txt 2>&1 && RC=0 || RC=$?
           echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
-          sed -n '/^Terraform will perform the following actions:/,/^$/p' plan.txt > changes.txt || true
+          sed -n '/^OpenTofu will perform the following actions:/,/^Plan:/p' plan.txt > changes.txt || true
           cat changes.txt
 
       - name: Create or Update Issue on Drift
