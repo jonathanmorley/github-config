@@ -57,7 +57,7 @@ jobs:
           sed -i '/^Plan: [0-9]/d' plan.txt || true
           sed -i '/^$/d' plan.txt || true
           sed -i '/^Changes to Outputs:/d' plan.txt || true
-          awk '/^  # .* imported$/{skip=1; next} /^  # .*\/{skip=0} !skip' plan.txt > plan_filtered.txt || true
+          awk '/imported$/{skip=1; next} /# .*will be/{skip=0} !skip' plan.txt > plan_filtered.txt || true
           if [ ! -s plan_filtered.txt ]; then
             echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
             echo 'No changes.' >> "$GITHUB_STEP_SUMMARY"
