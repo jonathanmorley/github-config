@@ -11,6 +11,7 @@ on:
     paths:
       - '**.tf'
       - '.github/workflows/terraform.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -33,7 +34,7 @@ jobs:
         uses: octo-sts/action@main
         id: octo-sts
         with:
-          scope: jonathanmorley/github-config
+          scope: jonathanmorley
           identity: terraform
 
       - name: Setup Terraform
@@ -68,7 +69,8 @@ jobs:
 
   apply:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
+    environment: terraform-apply
     concurrency:
       group: terraform
       cancel-in-progress: false
@@ -82,7 +84,7 @@ jobs:
         uses: octo-sts/action@main
         id: octo-sts
         with:
-          scope: jonathanmorley/github-config
+          scope: jonathanmorley
           identity: terraform
 
       - name: Setup Terraform

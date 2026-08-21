@@ -1,19 +1,19 @@
-data "http" "repos" {
-  url = "https://api.github.com/orgs/jonathanmorley/repos?per_page=100&type=all"
-
-  request_headers = {
-    Accept        = "application/vnd.github+json"
-    Authorization = "Bearer ${var.github_token}"
-  }
+data "github_repositories" "all" {
+  query = "org:jonathanmorley"
 }
 
 locals {
-  all_repos = jsondecode(data.http.repos.response_body)
   managed_repos = [
-    for repo in local.all_repos :
-    repo.name
-    if !contains(var.excluded_repos, repo.name)
+    for repo in distinct(compact(data.github_repositories.all.names)) :
+    repo
+    if !contains(var.excluded_repos, repo)
   ]
+}
+
+import {
+  for_each = toset(local.managed_repos)
+  id       = each.value
+  to       = github_repository.managed[each.value]
 }
 
 resource "github_repository" "managed" {

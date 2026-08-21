@@ -27,7 +27,7 @@ terraform apply   # Apply changes
 
 ## Authentication
 
-This repo uses [Octo STS](https://github.com/chainguard-dev/octo-sts) for short-lived GitHub credentials. The trust policy is at `.github/chainguard/terraform.sts.yaml`.
+This repo uses [Octo STS](https://github.com/chainguard-dev/octo-sts) for short-lived GitHub credentials. The trust policy is at `jonathanmorley/.github/.github/chainguard/terraform.sts.yaml`.
 
 State is stored in Terraform Cloud. GHA authenticates via `TF_TOKEN_app_terraform_io`.
 
