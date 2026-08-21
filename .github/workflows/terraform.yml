@@ -40,40 +40,40 @@ jobs:
       - name: OpenTofu Init
         run: tofu init
 
-      - name: OpenTofu Plan
-        id: plan
+      - name: OpenTofu Import
+        id: import
         env:
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: tofu plan -no-color -out=tfplan
         continue-on-error: true
 
+      - name: OpenTofu Plan
+        id: plan
+        if: steps.import.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
+        run: tofu plan -no-color -detailed-exitcode
+        continue-on-error: true
+
       - name: Write Plan to Summary
         if: always() && steps.plan.outcome != 'skipped'
         run: |
-          CHANGES=$(tofu show -no-color -json tfplan 2>/dev/null | jq -r '
-            .resource_changes // [] |
-            map(select(.change.actions != ["create"])) |
-            if length == 0 then ""
-            else map(.address + " (" + (.change.actions | join(", ")) + ")") | join("\n")
-            end
-          ' || true)
-          if [ -z "$CHANGES" ]; then
+          if [ "${{ steps.plan.outputs.exitcode }}" = "2" ]; then
             echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
-            echo 'No changes.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Drift detected — see workflow logs for details.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '### Terraform Plan' >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            echo "$CHANGES" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No changes.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Fail on Plan Error
-        if: steps.plan.outcome == 'failure'
+      - name: Fail on Import Error
+        if: steps.import.outcome == 'failure'
         run: exit 1
 
       - name: Upload Plan
-        if: steps.plan.outcome == 'success'
+        if: steps.import.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
