@@ -29,7 +29,7 @@ tofu apply   # Apply changes
 
 This repo uses [Octo STS](https://github.com/chainguard-dev/octo-sts) for short-lived GitHub credentials. The trust policy is at `jonathanmorley/.github/.github/chainguard/terraform.sts.yaml`.
 
-State is stored in Terraform Cloud. GHA authenticates via `TF_TOKEN_app_terraform_io`.
+State is ephemeral — each workflow run imports all repos fresh from GitHub. No state persistence needed.
 
 ## Adding a New Repo
 
