@@ -21,9 +21,6 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    concurrency:
-      group: terraform
-      cancel-in-progress: false
     env:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
     steps:
@@ -80,9 +77,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: plan
     environment: terraform-apply
-    concurrency:
-      group: terraform
-      cancel-in-progress: false
     env:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
     steps:

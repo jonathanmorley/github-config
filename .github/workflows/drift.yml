@@ -13,9 +13,6 @@ permissions:
 jobs:
   detect-drift:
     runs-on: ubuntu-latest
-    concurrency:
-      group: terraform
-      cancel-in-progress: false
     env:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_CLOUD_TOKEN }}
     steps:
