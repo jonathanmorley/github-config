@@ -109,6 +109,31 @@ jobs:
               console.log('Created new drift issue')
             }
 
-      - name: No Drift
+      - name: Close Drift Issue
         if: steps.plan.outputs.exitcode == '0'
-        run: echo "No drift detected"
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          github-token: ${{ steps.octo-sts.outputs.token }}
+          script: |
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'drift'
+            })
+
+            for (const issue of existing.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: 'Drift resolved — infrastructure now matches configuration.'
+              })
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              })
+              console.log(`Closed drift issue #${issue.number}`)
+            }
