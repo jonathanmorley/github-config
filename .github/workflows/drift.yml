@@ -45,7 +45,7 @@ jobs:
             /^  # .* will be imported/ { skip=1; next }
             /^  # / { skip=0 }
             !skip { print }
-          ' > changes.txt || true
+          ' | grep -v '^OpenTofu will perform' | grep -v '^Plan:' > changes.txt || true
           if [ -s changes.txt ] && [ "$(sed -e '/^[[:space:]]*$/d' changes.txt | wc -c)" -gt 0 ]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
