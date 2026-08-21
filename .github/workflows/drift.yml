@@ -40,7 +40,6 @@ jobs:
           TF_VAR_github_token: ${{ steps.octo-sts.outputs.token }}
         run: |
           tofu plan -no-color -detailed-exitcode -out=tfplan > /dev/null 2>&1 && RC=0 || RC=$?
-          echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
           CHANGES=$(tofu show -no-color -json tfplan 2>/dev/null | jq -r '
             .resource_changes // [] |
             map(select(.change.actions != ["create"] and .change.actions != ["no-op"])) |
@@ -49,6 +48,12 @@ jobs:
             end
           ' || true)
           echo "$CHANGES" > changes.txt
+          # Override exit code: no-op/create-only plans are not drift
+          if [ -n "$CHANGES" ]; then
+            echo "exitcode=$RC" >> "$GITHUB_OUTPUT"
+          else
+            echo "exitcode=0" >> "$GITHUB_OUTPUT"
+          fi
           cat changes.txt
 
       - name: Create or Update Issue on Drift
