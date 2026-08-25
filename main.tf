@@ -3,8 +3,8 @@ terraform {
 
   required_providers {
     github = {
-      source  = "integrations/github"
-      version = "~> 6.0"
+      source  = "registry.terraform.io/jonathanmorley/github"
+      version = "6.13.0-jm.2"
     }
   }
 }

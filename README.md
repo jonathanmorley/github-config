@@ -5,6 +5,7 @@ OpenTofu-managed configuration for all `jonathanmorley/*` repositories.
 ## What It Manages
 
 - Repository settings (auto-merge, features, merge strategies)
+- Dependabot alerts and automated security fixes on every managed repo
 - Drift detection via daily scheduled runs
 - Automated enforcement via PR merges
 
@@ -24,6 +25,14 @@ tofu apply   # Apply changes
 2. **Defaults:** Applies uniform settings from `variables.tf`
 3. **Exclusions:** Skip repos via `excluded_repos` variable
 4. **Overrides:** Per-repo exceptions via `repo_overrides` variable (future)
+
+## Security Settings
+
+Dependabot alerts and automated security fixes are enforced on every managed repository via
+`github_repository_vulnerability_alerts` and `github_repository_dependabot_security_updates` in
+`repos.tf`. Both features are free on personal accounts, including private repositories.
+Settings that lack provider resources today (private vulnerability reporting, CodeQL default setup)
+are tracked for follow-up via a patched provider build.
 
 ## Authentication
 

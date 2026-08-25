@@ -34,6 +34,18 @@ import {
   to       = github_repository.private[each.value]
 }
 
+import {
+  for_each = toset(local.managed_repos)
+  id       = each.value
+  to       = github_repository_vulnerability_alerts.this[each.value]
+}
+
+import {
+  for_each = toset(local.managed_repos)
+  id       = each.value
+  to       = github_repository_dependabot_security_updates.this[each.value]
+}
+
 resource "github_repository" "public" {
   for_each = toset(local.public_repos)
 
@@ -88,4 +100,18 @@ resource "github_repository" "private" {
       description,
     ]
   }
+}
+
+# Dependabot alerts and security updates are free on personal accounts,
+# including private repos
+resource "github_repository_vulnerability_alerts" "this" {
+  for_each   = toset(local.managed_repos)
+  repository = each.value
+  enabled    = true
+}
+
+resource "github_repository_dependabot_security_updates" "this" {
+  for_each   = toset(local.managed_repos)
+  repository = each.value
+  enabled    = true
 }
