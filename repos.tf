@@ -115,3 +115,12 @@ resource "github_repository_dependabot_security_updates" "this" {
   repository = each.value
   enabled    = true
 }
+
+# Require all actions and reusable workflows to be pinned to a full-length
+# commit SHA on every managed repo
+resource "github_actions_repository_permissions" "this" {
+  for_each = toset(local.managed_repos)
+
+  repository           = each.value
+  sha_pinning_required = true
+}

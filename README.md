@@ -34,6 +34,22 @@ Dependabot alerts and automated security fixes are enforced on every managed rep
 Settings that lack provider resources today (private vulnerability reporting, CodeQL default setup)
 are tracked for follow-up via a patched provider build.
 
+"Require actions to be pinned to a full-length commit SHA" is enforced on every managed repository via
+`github_actions_repository_permissions` with `sha_pinning_required = true`. This blocks builds that
+reference actions or reusable workflows by mutable tag, ensuring only immutable commit SHAs are used.
+
+### Follow-ups awaiting a stable GitHub API
+
+The following GitHub security features are not yet enforceable via this config:
+
+- **"Require lockfiles"** (native Actions setting) — no public REST/GraphQL endpoint exists.
+- **Actions policies / workflow execution protections** (actor and event rules that restrict who can
+  trigger workflows and which events may run them) — in public preview, built on the rulesets
+  framework, but the actor/event rule types are not yet exposed in the public REST API or the
+  provider's `github_repository_ruleset` resource.
+
+These are tracked for follow-up once GitHub exposes a stable API and the provider gains support.
+
 ## Authentication
 
 This repo uses [Octo STS](https://github.com/chainguard-dev/octo-sts) for short-lived GitHub credentials. The trust policy is at `jonathanmorley/.github/.github/chainguard/terraform.sts.yaml`.
