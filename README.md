@@ -25,6 +25,16 @@ tofu apply   # Apply changes
 2. **Defaults:** Applies uniform settings from `variables.tf`
 3. **Exclusions:** Skip repos via `excluded_repos` variable
 4. **Overrides:** Per-repo exceptions via `repo_overrides` variable (future)
+5. **Adoption:** Every managed object is imported (not created out-of-band) — see below
+
+### Imports for every resource
+
+Every managed GitHub object pre-exists on GitHub, so each `resource` block must
+have a matching `import` block that adopts it into state. This avoids out-of-band
+creation (and the drift and destructive applies that follow). This rule is
+enforced automatically by `scripts/check-imports.sh` in CI on every plan. If a
+future resource is intentionally create-only, annotate its `resource` line with
+`# no-import` to exempt it.
 
 ## Security Settings
 

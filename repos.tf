@@ -116,6 +116,12 @@ resource "github_repository_dependabot_security_updates" "this" {
   enabled    = true
 }
 
+import {
+  for_each = toset(local.managed_repos)
+  id       = each.value
+  to       = github_actions_repository_permissions.this[each.value]
+}
+
 # Require all actions and reusable workflows to be pinned to a full-length
 # commit SHA on every managed repo
 resource "github_actions_repository_permissions" "this" {
