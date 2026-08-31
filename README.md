@@ -25,6 +25,16 @@ tofu apply   # Apply changes
 2. **Defaults:** Applies uniform settings from `variables.tf`
 3. **Exclusions:** Skip repos via `excluded_repos` variable
 4. **Overrides:** Per-repo exceptions via `repo_overrides` variable (future)
+5. **Adoption:** Every managed object is imported (not created out-of-band) — see below
+
+### Imports for every resource
+
+Every managed GitHub object pre-exists on GitHub, so each `resource` block must
+have a matching `import` block that adopts it into state. This avoids out-of-band
+creation (and the drift and destructive applies that follow). This rule is
+enforced automatically by `scripts/check-imports.sh` in CI on every plan. If a
+future resource is intentionally create-only, annotate its `resource` line with
+`# no-import` to exempt it.
 
 ## Security Settings
 
@@ -33,6 +43,24 @@ Dependabot alerts and automated security fixes are enforced on every managed rep
 `repos.tf`. Both features are free on personal accounts, including private repositories.
 Settings that lack provider resources today (private vulnerability reporting, CodeQL default setup)
 are tracked for follow-up via a patched provider build.
+
+"Require actions to be pinned to a full-length commit SHA" is enforced on every managed repository via
+`github_actions_repository_permissions` with `sha_pinning_required = true` and `allowed_actions = "all"`.
+This blocks builds that reference actions or reusable workflows by mutable tag, ensuring only immutable
+commit SHAs are used. `allowed_actions` is set to `"all"` explicitly because SHA pinning only applies
+when all actions are allowed (it is not applicable to `local_only` or `selected`).
+
+### Follow-ups awaiting a stable GitHub API
+
+The following GitHub security features are not yet enforceable via this config:
+
+- **"Require lockfiles"** (native Actions setting) — no public REST/GraphQL endpoint exists.
+- **Actions policies / workflow execution protections** (actor and event rules that restrict who can
+  trigger workflows and which events may run them) — in public preview, built on the rulesets
+  framework, but the actor/event rule types are not yet exposed in the public REST API or the
+  provider's `github_repository_ruleset` resource.
+
+These are tracked for follow-up once GitHub exposes a stable API and the provider gains support.
 
 ## Authentication
 
