@@ -30,6 +30,12 @@ with what is actually configured on GitHub.
 This is enforced deterministically by `scripts/check-imports.sh`, which
 `terraform.yml` runs on every plan. Keep it green.
 
+**SHA pinning:** when managing `github_actions_repository_permissions` with
+`sha_pinning_required`, also set `allowed_actions = "all"` explicitly. SHA
+pinning only applies when `allowed_actions` is `all` (it is ignored for
+`local_only` / `selected`), so set both so the enforcement is meaningful and
+self-documenting.
+
 **Escape hatch:** if a resource is genuinely create-only (a brand-new object
 that does not exist on GitHub yet), you may annotate the `resource` line with a
 trailing `# no-import` comment to exempt it.

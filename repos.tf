@@ -123,10 +123,12 @@ import {
 }
 
 # Require all actions and reusable workflows to be pinned to a full-length
-# commit SHA on every managed repo
+# commit SHA on every managed repo. SHA pinning is only applicable when
+# `allowed_actions` is `all`, so set both explicitly.
 resource "github_actions_repository_permissions" "this" {
   for_each = toset(local.managed_repos)
 
   repository           = each.value
+  allowed_actions      = "all"
   sha_pinning_required = true
 }

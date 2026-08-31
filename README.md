@@ -45,8 +45,10 @@ Settings that lack provider resources today (private vulnerability reporting, Co
 are tracked for follow-up via a patched provider build.
 
 "Require actions to be pinned to a full-length commit SHA" is enforced on every managed repository via
-`github_actions_repository_permissions` with `sha_pinning_required = true`. This blocks builds that
-reference actions or reusable workflows by mutable tag, ensuring only immutable commit SHAs are used.
+`github_actions_repository_permissions` with `sha_pinning_required = true` and `allowed_actions = "all"`.
+This blocks builds that reference actions or reusable workflows by mutable tag, ensuring only immutable
+commit SHAs are used. `allowed_actions` is set to `"all"` explicitly because SHA pinning only applies
+when all actions are allowed (it is not applicable to `local_only` or `selected`).
 
 ### Follow-ups awaiting a stable GitHub API
 
