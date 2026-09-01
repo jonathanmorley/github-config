@@ -41,14 +41,20 @@ future resource is intentionally create-only, annotate its `resource` line with
 Dependabot alerts and automated security fixes are enforced on every managed repository via
 `github_repository_vulnerability_alerts` and `github_repository_dependabot_security_updates` in
 `repos.tf`. Both features are free on personal accounts, including private repositories.
-Settings that lack provider resources today (private vulnerability reporting, CodeQL default setup)
-are tracked for follow-up via a patched provider build.
+Settings that lack provider resources upstream are provided via the patched provider fork
+(`registry.terraform.io/jonathanmorley/github`), such as `github_repository_immutable_releases`.
 
 "Require actions to be pinned to a full-length commit SHA" is enforced on every managed repository via
 `github_actions_repository_permissions` with `sha_pinning_required = true` and `allowed_actions = "all"`.
 This blocks builds that reference actions or reusable workflows by mutable tag, ensuring only immutable
 commit SHAs are used. `allowed_actions` is set to `"all"` explicitly because SHA pinning only applies
 when all actions are allowed (it is not applicable to `local_only` or `selected`).
+
+**"Enable release immutability"** is enforced on every managed repository via
+`github_repository_immutable_releases` in `repos.tf`. Once enabled, the content of existing and future
+releases cannot be modified or deleted, protecting release provenance and integrity. This setting is
+backed by the stable public REST API (`/repos/{owner}/{repo}/immutable-releases`) and is provided by the
+patched provider fork.
 
 ### Follow-ups awaiting a stable GitHub API
 
