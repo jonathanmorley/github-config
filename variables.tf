@@ -52,6 +52,27 @@ variable "excluded_repos" {
   default     = []
 }
 
+variable "ruleset_excluded_repos" {
+  description = <<-EOT
+    List of repo names excluded from default-branch protection. Reasons:
+    - Already protect their default branch via their own rulesets: asdf-mono,
+      asdf-pnpm, nixpkgs, oktaws
+    - Archived (excluded from management but kept listed for safety): workup
+    - Private repos — repository rulesets are a paid feature on GitHub's
+      free plan (GitHub returns 403 "Upgrade to GitHub Pro or make this
+      repository public to enable this feature."): cars, floorplans,
+      nixpkgs-sanitized-preview, notes
+  EOT
+  type        = list(string)
+  default     = ["asdf-mono", "asdf-pnpm", "nixpkgs", "oktaws", "workup", "cars", "floorplans", "nixpkgs-sanitized-preview", "notes"]
+}
+
+variable "ruleset_name" {
+  description = "Name of the default-branch ruleset created on every protected repo"
+  type        = string
+  default     = "Default branch protection"
+}
+
 variable "repo_overrides" {
   description = "Per-repo setting overrides (repo name -> settings map)"
   type        = map(map(any))
