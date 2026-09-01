@@ -114,6 +114,12 @@ resource "github_repository_dependabot_security_updates" "this" {
   for_each   = toset(local.managed_repos)
   repository = each.value
   enabled    = true
+
+  # GitHub requires vulnerability alerts to be enabled before automated
+  # security fixes can be configured. Without this explicit dependency,
+  # OpenTofu runs these two for_each resources in parallel and the PUT to
+  # automated-security-fixes can race the alerts enablement (422).
+  depends_on = [github_repository_vulnerability_alerts.this]
 }
 
 import {
@@ -131,4 +137,20 @@ resource "github_actions_repository_permissions" "this" {
   repository           = each.value
   allowed_actions      = "all"
   sha_pinning_required = true
+}
+
+import {
+  for_each = toset(local.managed_repos)
+  id       = each.value
+  to       = github_repository_immutable_releases.this[each.value]
+}
+
+# Enforce immutable releases ("Enable release immutability") on every managed
+# repo so the content of existing and future releases cannot be modified or
+# deleted, strengthening release supply-chain integrity.
+resource "github_repository_immutable_releases" "this" {
+  for_each = toset(local.managed_repos)
+
+  repository = each.value
+  enabled    = true
 }

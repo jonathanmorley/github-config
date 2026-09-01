@@ -36,6 +36,11 @@ pinning only applies when `allowed_actions` is `all` (it is ignored for
 `local_only` / `selected`), so set both so the enforcement is meaningful and
 self-documenting.
 
+**Immutable releases:** `github_repository_immutable_releases` enforces
+GitHub's "Enable release immutability" so release content cannot be modified
+or deleted. It is a repo-scoped resource with a matching `import` block; set
+`enabled = true` to enforce it on every managed repo.
+
 **Escape hatch:** if a resource is genuinely create-only (a brand-new object
 that does not exist on GitHub yet), you may annotate the `resource` line with a
 trailing `# no-import` comment to exempt it.
