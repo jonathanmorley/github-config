@@ -6,20 +6,62 @@ data "github_repositories" "private" {
   query = "user:jonathanmorley is:private"
 }
 
+# Repos discovered by the namespace search, before per-repo filtering. We keep
+# these raw so the data source can learn each repo's archived/fork status and
+# default branch, and the filtered locals below decide what gets managed.
 locals {
-  public_repos = [
+  public_candidates = [
     for repo in distinct(compact(data.github_repositories.public.names)) :
     repo
     if !contains(var.excluded_repos, repo)
   ]
 
-  private_repos = [
+  private_candidates = [
     for repo in distinct(compact(data.github_repositories.private.names)) :
     repo
     if !contains(var.excluded_repos, repo)
   ]
 
+  all_repos = concat(local.public_candidates, local.private_candidates)
+}
+
+# Per-repo facts (default branch, fork status, archived status, node id).
+# Covers every candidate repo so the filtered locals can decide what is
+# actively managed.
+data "github_repository" "managed" {
+  for_each = toset(local.all_repos)
+
+  name = each.value
+}
+
+locals {
+  # Actively managed repos. Archived repos drop out of every `for_each` below,
+  # so they are no longer managed by this config at all. (Removing an archived
+  # repo from config only forgets it on the next ephemeral-state run — it does
+  # not delete anything.)
+  public_repos = [
+    for repo in local.public_candidates :
+    repo
+    if !data.github_repository.managed[repo].archived
+  ]
+
+  private_repos = [
+    for repo in local.private_candidates :
+    repo
+    if !data.github_repository.managed[repo].archived
+  ]
+
   managed_repos = concat(local.public_repos, local.private_repos)
+
+  # Repos that get default-branch protection: every managed repo except forks
+  # (they need direct-push workflows to track upstreams) and repos excluded
+  # via `ruleset_excluded_repos`.
+  protected_repos = [
+    for repo in local.managed_repos :
+    repo
+    if !data.github_repository.managed[repo].fork &&
+    !contains(var.ruleset_excluded_repos, repo)
+  ]
 }
 
 import {
@@ -153,4 +195,54 @@ resource "github_repository_immutable_releases" "this" {
 
   repository = each.value
   enabled    = true
+}
+
+# Protect the default branch of every applicable managed repo (forks and
+# excluded repos — see `ruleset_excluded_repos`) with a branch ruleset:
+#
+#   - Require a pull request before merging, with 0 required approvals
+#     (repos are solo-maintained; merging still goes through a PR)
+#   - Require conversation resolution
+#   - Require linear history (blocks merge commits on the default branch)
+#   - Require signed commits
+#   - Block branch deletion and force pushes (a ruleset blocks force pushes
+#     by default — only a `non_fast_forward` rule allows them, and we do not
+#     create one)
+#   - Enforced for everyone (no bypass actors)
+#
+# Unlike classic branch protection, a ruleset cannot express the
+# check-agnostic "require branches to be up to date" gate (GitHub rejects an
+# empty `required_status_checks` list), so that rule is dropped. See CLAUDE.md.
+#
+# `# no-import` / no import block: this is the bootstrap phase. These rules
+# don't exist on GitHub yet, so the FIRST apply must create them through
+# Terraform. Once created, a follow-up change (after the provider fork releases
+# the `github_repository_rulesets` data source) adds the matching import block
+# (id = "${repo}:${ruleset_id}") and removes this annotation so subsequent
+# ephemeral-state runs adopt the existing rules instead of recreating them.
+resource "github_repository_ruleset" "default" { # no-import
+  for_each = toset(local.protected_repos)
+
+  name        = var.ruleset_name
+  repository  = data.github_repository.managed[each.value].name
+  target      = "branch"
+  enforcement = "active"
+
+  conditions {
+    ref_name {
+      include = ["~DEFAULT_BRANCH"]
+      exclude = []
+    }
+  }
+
+  rules {
+    required_linear_history = true
+    required_signatures     = true
+    deletion                = true
+
+    pull_request {
+      required_approving_review_count   = 0
+      required_review_thread_resolution = true
+    }
+  }
 }

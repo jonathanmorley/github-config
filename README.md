@@ -6,8 +6,11 @@ OpenTofu-managed configuration for all `jonathanmorley/*` repositories.
 
 - Repository settings (auto-merge, features, merge strategies)
 - Dependabot alerts and automated security fixes on every managed repo
+- Default-branch protection on every applicable managed repo (see below)
 - Drift detection via daily scheduled runs
 - Automated enforcement via PR merges
+
+Archived repos are excluded from management entirely.
 
 ## Usage
 
@@ -23,9 +26,10 @@ tofu apply   # Apply changes
 
 1. **Discovery:** Automatically finds all repos in the `jonathanmorley` namespace
 2. **Defaults:** Applies uniform settings from `variables.tf`
-3. **Exclusions:** Skip repos via `excluded_repos` variable
-4. **Overrides:** Per-repo exceptions via `repo_overrides` variable (future)
-5. **Adoption:** Every managed object is imported (not created out-of-band) — see below
+3. **Archived:** Repos that are archived are excluded from all management
+4. **Exclusions:** Skip repos via `excluded_repos` variable
+5. **Overrides:** Per-repo exceptions via `repo_overrides` variable (future)
+6. **Adoption:** Every managed object is imported (not created out-of-band) — see below
 
 ### Imports for every resource
 
@@ -55,6 +59,38 @@ when all actions are allowed (it is not applicable to `local_only` or `selected`
 releases cannot be modified or deleted, protecting release provenance and integrity. This setting is
 backed by the stable public REST API (`/repos/{owner}/{repo}/immutable-releases`) and is provided by the
 patched provider fork.
+
+### Default-branch protection
+
+Every applicable managed repository gets a branch ruleset on its default branch via
+`github_repository_ruleset` in `repos.tf`:
+
+- Require a pull request before merging (0 required approvals)
+- Require conversation resolution
+- Require linear history (blocks merge commits)
+- Require signed commits
+- Block force pushes and branch deletion
+- Enforced for everyone (no bypass actors)
+
+Forked repos are excluded (they need direct-push workflows to track upstreams). Repos already protected
+by their own rulesets are excluded by default via the `ruleset_excluded_repos` variable so the two
+mechanisms don't collide; add any future repos that manage their own protection to that list. Private
+repos are also excluded: repository rulesets are a paid feature on GitHub's free plan, and GitHub
+refuses them for private repos (403 "Upgrade to GitHub Pro or make this repository public to enable
+this feature.").
+
+**Why a ruleset instead of classic branch protection?** Rulesets are the modern, recommended
+mechanism and are what GitHub enforces in the UI. The tradeoff: classic branch protection can express
+"require branches to be up to date" without pinning specific checks (`strict` + empty `contexts`),
+whereas rulesets reject `required_status_checks` with an empty check list. Since CI varies per repo,
+the check-agnostic "up to date" gate cannot be expressed in a rule set — the strictness of that single
+check is the price of the simpler, uniform mechanism.
+
+**Bootstrap phase:** these rules are brand-new, so the resource is currently annotated `# no-import`
+and has no `import` block — the first Terraform apply creates them. A follow-up change adds the
+`import` blocks (via the `github_repository_rulesets` data source) once the rules exist, so
+ephemeral-state runs adopt instead of recreate. The rules are only ever created or modified through
+this Terraform deployment.
 
 ### Follow-ups awaiting a stable GitHub API
 
