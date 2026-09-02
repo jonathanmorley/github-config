@@ -70,6 +70,7 @@ Every applicable managed repository gets a branch ruleset on its default branch 
 - Require linear history (blocks merge commits)
 - Require signed commits
 - Block force pushes and branch deletion
+- Restrict PR merge methods to squash and rebase (no merge commits)
 - Enforced for everyone (no bypass actors)
 
 Forked repos are excluded (they need direct-push workflows to track upstreams). Repos already protected

@@ -49,30 +49,29 @@ private repos — rulesets are a paid feature for private repos on the free plan
 GitHub 403s it). The ruleset applies to `~DEFAULT_BRANCH` via
 `conditions.ref_name.include`, requires a PR with 0 approvals
 (`pull_request { required_approving_review_count = 0 }`), conversation
-resolution, linear history and signed commits, and blocks branch deletion.
-Force pushes are blocked by default (a ruleset only permits them when a
-`non_fast_forward` rule exists — never add one). Rulesets cannot express the
+resolution, linear history and signed commits, blocks branch deletion and force
+pushes, and restricts PR merge methods to squash and rebase. Force pushes are
+explicitly blocked (`non_fast_forward = true`) and merge commits are disabled at
+the ruleset level (`allowed_merge_methods = ["squash", "rebase"]`), consistent
+with `required_linear_history`; a ruleset WITHOUT `non_fast_forward` actually
+ALLOWS force pushes, so it must be set explicitly. Rulesets cannot express the
 check-agnostic "require branches to be up to date" gate (GitHub rejects an
 empty `required_status_checks` list), so that rule is intentionally dropped;
 classic branch protection's `strict` + empty `contexts` could express it, but
 rulesets are the uniform modern mechanism. The `pull_request` block must be
 present, or direct pushes remain allowed.
 
-**Branch protection lifecycle (bootstrap then import):** these rules are
-brand-new, so the first apply must CREATE them through Terraform. During this
-bootstrap phase the resource is annotated `# no-import` and has no import
-block. Follow-up change: once the rules exist on GitHub **and** the provider
-fork has released the `github_repository_rulesets` data source, add the
-matching `import` block (`for_each = toset(local.protected_repos)`, `to =
+**Branch protection lifecycle (import-based):** each ruleset already exists on
+GitHub and is adopted on every ephemeral-state run through an `import` block
+(`for_each = toset(local.protected_repos)`, `to =
 github_repository_ruleset.default[each.value]`) with `id =
-"${each.value}:${[for rs in data.github_repository_rulesets.this[each.value].rulesets : rs.id if rs.name == var.ruleset_name][0]}"`,
-and remove the `# no-import` annotation so ephemeral-state runs adopt the
-existing rules instead of recreating them. Never create these rules with the
-raw GitHub API — they must only ever be created or modified through the
-Terraform deployment. Note: during the bootstrap phase every `tofu apply`
-would create another duplicate ruleset (there is no state to adopt from), so
-the Phase 1 ruleset PR must be followed promptly by the Phase 2 import PR, and
-drift runs (which only plan, never apply) are safe in the meantime.
+"${each.value}:${[for rs in data.github_repository_rulesets.this[each.value].rulesets : rs.id if rs.name == var.ruleset_name][0]}"`.
+The `data.github_repository_rulesets` data source discovers each repo's
+GitHub-assigned numeric ruleset id (unknown until the ruleset exists), and the
+import block prevents a re-apply from POST-creating a duplicate. If a repo's
+ruleset is ever missing from GitHub, the data source lookup fails loudly (good
+— it signals drift). Never create or modify these rules with the raw GitHub API
+— they must only ever be created or modified through the Terraform deployment.
 
 **Archived repos:** `managed_repos` filters out archived repos (via
 `data.github_repository.managed[repo].archived`), so every resource `for_each`
