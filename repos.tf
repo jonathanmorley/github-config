@@ -54,12 +54,14 @@ locals {
   managed_repos = concat(local.public_repos, local.private_repos)
 
   # Repos that get default-branch protection: every managed repo except forks
-  # (they need direct-push workflows to track upstreams) and repos excluded
-  # via `ruleset_excluded_repos`.
+  # (they need direct-push workflows to track upstreams), private repos
+  # (rulesets are a paid feature for private repos on the free plan, GitHub
+  # 403s them), and repos excluded via `ruleset_excluded_repos`.
   protected_repos = [
     for repo in local.managed_repos :
     repo
     if !data.github_repository.managed[repo].fork &&
+    !contains(local.private_repos, repo) &&
     !contains(var.ruleset_excluded_repos, repo)
   ]
 }
@@ -205,28 +207,51 @@ resource "github_repository_immutable_releases" "this" {
 #   - Require conversation resolution
 #   - Require linear history (blocks merge commits on the default branch)
 #   - Require signed commits
-#   - Block branch deletion and force pushes (a ruleset blocks force pushes
-#     by default — only a `non_fast_forward` rule allows them, and we do not
-#     create one)
+#   - Block branch deletion
+#   - Block force pushes (`non_fast_forward = true`; a ruleset WITHOUT this
+#     rule actually ALLOWS force pushes, so it must be set explicitly)
+#   - Restrict PR merge methods to squash and rebase (consistent with
+#     require_linear_history — no merge commits)
 #   - Enforced for everyone (no bypass actors)
 #
 # Unlike classic branch protection, a ruleset cannot express the
 # check-agnostic "require branches to be up to date" gate (GitHub rejects an
 # empty `required_status_checks` list), so that rule is dropped. See CLAUDE.md.
 #
-# `# no-import` / no import block: this is the bootstrap phase. These rules
-# don't exist on GitHub yet, so the FIRST apply must create them through
-# Terraform. Once created, a follow-up change (after the provider fork releases
-# the `github_repository_rulesets` data source) adds the matching import block
-# (id = "${repo}:${ruleset_id}") and removes this annotation so subsequent
-# ephemeral-state runs adopt the existing rules instead of recreating them.
-resource "github_repository_ruleset" "default" { # no-import
+# Each ruleset is discovered at plan time by `data.github_repository_rulesets`
+# and adopted (not created) via the matching import block, because the ruleset's
+# numeric id is GitHub-assigned (unknown until it exists). An import block here
+# prevents re-apply from POST-creating a duplicate ruleset. Never create or
+# modify these rules with the raw GitHub API.
+data "github_repository_rulesets" "this" {
+  for_each   = toset(local.protected_repos)
+  repository = each.value
+}
+
+import {
+  for_each = toset(local.protected_repos)
+  id = "${each.value}:${[
+    for rs in data.github_repository_rulesets.this[each.value].rulesets :
+    rs.id if rs.name == var.ruleset_name
+  ][0]}"
+  to = github_repository_ruleset.default[each.value]
+}
+
+resource "github_repository_ruleset" "default" {
   for_each = toset(local.protected_repos)
 
   name        = var.ruleset_name
   repository  = data.github_repository.managed[each.value].name
   target      = "branch"
   enforcement = "active"
+
+  # octo-sts (GitHub App, ID 801323) needs to bypass the ruleset for releases
+  # that push directly to the default branch (e.g. tag pushes, release commits).
+  bypass_actors {
+    actor_id    = 801323 # octo-sts GitHub App
+    actor_type  = "Integration"
+    bypass_mode = "always"
+  }
 
   conditions {
     ref_name {
@@ -236,6 +261,7 @@ resource "github_repository_ruleset" "default" { # no-import
   }
 
   rules {
+    non_fast_forward        = true # Block force pushes
     required_linear_history = true
     required_signatures     = true
     deletion                = true
@@ -243,6 +269,7 @@ resource "github_repository_ruleset" "default" { # no-import
     pull_request {
       required_approving_review_count   = 0
       required_review_thread_resolution = true
+      allowed_merge_methods             = ["squash", "rebase"] # match require_linear_history: no merge commits
     }
   }
 }

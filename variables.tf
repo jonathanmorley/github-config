@@ -64,7 +64,7 @@ variable "ruleset_excluded_repos" {
       nixpkgs-sanitized-preview, notes
   EOT
   type        = list(string)
-  default     = ["asdf-mono", "asdf-pnpm", "nixpkgs", "oktaws", "workup", "cars", "floorplans", "nixpkgs-sanitized-preview", "notes"]
+  default     = ["asdf-mono", "asdf-pnpm", "nixpkgs", "oktaws", "workup", "cars", "floorplans", "nixpkgs-sanitized-preview", "notes", "tag-trigger-test"]
 }
 
 variable "ruleset_name" {
