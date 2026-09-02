@@ -54,12 +54,14 @@ locals {
   managed_repos = concat(local.public_repos, local.private_repos)
 
   # Repos that get default-branch protection: every managed repo except forks
-  # (they need direct-push workflows to track upstreams) and repos excluded
-  # via `ruleset_excluded_repos`.
+  # (they need direct-push workflows to track upstreams), private repos
+  # (rulesets are a paid feature for private repos on the free plan, GitHub
+  # 403s them), and repos excluded via `ruleset_excluded_repos`.
   protected_repos = [
     for repo in local.managed_repos :
     repo
     if !data.github_repository.managed[repo].fork &&
+    !contains(local.private_repos, repo) &&
     !contains(var.ruleset_excluded_repos, repo)
   ]
 }
@@ -242,6 +244,14 @@ resource "github_repository_ruleset" "default" {
   repository  = data.github_repository.managed[each.value].name
   target      = "branch"
   enforcement = "active"
+
+  # octo-sts (GitHub App, ID 801323) needs to bypass the ruleset for releases
+  # that push directly to the default branch (e.g. tag pushes, release commits).
+  bypass_actors {
+    actor_id    = 801323 # octo-sts GitHub App
+    actor_type  = "Integration"
+    bypass_mode = "always"
+  }
 
   conditions {
     ref_name {
