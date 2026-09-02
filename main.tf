@@ -4,7 +4,7 @@ terraform {
   required_providers {
     github = {
       source  = "registry.terraform.io/jonathanmorley/github"
-      version = "6.13.0-jm.3"
+      version = "6.13.0-jm.4"
     }
   }
 }
