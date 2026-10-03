@@ -29,7 +29,7 @@ jobs:
         run: scripts/check-imports.sh
 
       - name: Federate GitHub Token
-        uses: octo-sts/action@b6a4c9287012d2e1d2477d4f25d6f35de668e2d3 # main
+        uses: octo-sts/action@2ea63db88c2be45e0d1dd46ecb820021eec01439 # main
         id: octo-sts
         with:
           scope: jonathanmorley
@@ -96,7 +96,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Federate GitHub Token
-        uses: octo-sts/action@b6a4c9287012d2e1d2477d4f25d6f35de668e2d3 # main
+        uses: octo-sts/action@2ea63db88c2be45e0d1dd46ecb820021eec01439 # main
         id: octo-sts
         with:
           scope: jonathanmorley
